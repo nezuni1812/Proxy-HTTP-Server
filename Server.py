@@ -2,7 +2,7 @@ from socket import *
 import sys
 
 if len(sys.argv) < 2:
-    print('Usage : "python ProxyServer.py [Adress of Server]')
+    print('Usage : "python Server.py [Adress of Server]')
     sys.exit(0)
 
 size = 1024
@@ -28,27 +28,28 @@ def check_whitelist(input_website, whitelist):
     return False
 
 def handle_http_request(client, message):
-    request_line = message.split('\r\n')[0]
-    request, url, version = request_line.split()
+    # request_line = message.split('\r\n')[0]
+    # request, url, version = request_line.split()
+    
+    # # Check if HTTP request is supported
+    # if request not in ['GET', 'POST', 'HEAD']:
+    # # HTTP request not supported
+    #     client.close()
+    #     print("Not support HTTP request")
+    #     return
 
-    # Check if HTTP request is supported
-    if request not in ['GET', 'POST', 'HEAD']:
-        # HTTP request not supported
-        client.close()
-        print("Not support HTTP request")
-        return
-
+    print(message)
     # Extract hostname from URL
-    hostname = url.split('/')[2]
-    print(f"HTTP Request: {request}")
-    print(f"URL: {url}")
-    print(f"Host: {hostname}\n")
+    # hostname = url.split('/')[2]
+    # print(f"HTTP Request: {request}")
+    # print(f"URL: {url}")
+    # print(f"Host: {hostname}\n")
     
     # Whitelist
-    if not check_whitelist(url, whitelist):
-        client.close()
-        print("Not whitelist")
-        return
+    # if not check_whitelist(url, whitelist):
+    #     client.close()
+    #     print("Not whitelist")
+    #     return
 
 def main():
     # Tạo proxy server và client socket
@@ -66,10 +67,10 @@ def main():
         client, client_addr = proxy_server.accept()
         print('Received a connection from:', client_addr)
         request = client.recv(size)
-        message = request.decode() 
-
+        message = request.decode('utf-8')
+        print(message)
         # Handle request
-        handle_http_request(client, message)
+        # handle_http_request(client, message)
     
     proxy_server.close()
 
