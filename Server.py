@@ -27,12 +27,23 @@ def check_whitelist(input_website, whitelist):
             return True
     return False
 
+def send_image_response(client, image_path):
+    with open(image_path, 'rb') as f:
+        data = f.read()
+        response = b'HTTP/1.1 403 Forbidden\r\n'
+        response += b'Content-Type: image/jpeg\r\n'
+        response += b'Content-Length: ' + str(len(data)).encode() + b'\r\n'
+        response += b'\r\n'
+        response += data
+        client.sendall(response)
+
 def handle_http_request(client, message):
     request_line = message.split('\r\n')[0]
     request, url, version = request_line.split()
 
     # Check if HTTP request is supported
     if request not in ['GET', 'POST', 'HEAD']:
+        send_image_response(client, 'Artboard 1.jpg')
         # HTTP request not supported
         client.close()
         print("Not support HTTP request")
@@ -46,6 +57,7 @@ def handle_http_request(client, message):
     
     # Whitelist
     if not check_whitelist(url, whitelist):
+        send_image_response(client, 'Artboard 1.jpg')
         client.close()
         print("Not whitelist")
         return
