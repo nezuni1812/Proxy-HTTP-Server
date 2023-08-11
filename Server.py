@@ -6,7 +6,7 @@ if len(sys.argv) < 2:
     print('Usage : "python Server.py [Adress of Server]')
     sys.exit(0)
 
-size = 65536
+size = 131072
 server_ip = sys.argv[1]
 server_port = 8888
 
