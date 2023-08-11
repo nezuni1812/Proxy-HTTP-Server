@@ -1,11 +1,12 @@
 from socket import *
 import sys
+from threading import Thread
 
 if len(sys.argv) < 2:
     print('Usage : "python Server.py [Adress of Server]')
     sys.exit(0)
 
-size = 1024
+size = 65536
 server_ip = sys.argv[1]
 server_port = 8888
 
@@ -36,14 +37,59 @@ def send_image_response(client, image_path):
         response += b'\r\n'
         response += data
         client.sendall(response)
+        
+def get_response_from_web(client, client_addr, hostname, request):
+    # Create a new socket to connect to the web server
+    web_server_socket = socket(AF_INET, SOCK_STREAM)
+    web_server_ip = gethostbyname(hostname)
+    web_server_socket.connect((web_server_ip, 80))
 
-def handle_http_request(client, message):
-    request_line = message.split('\r\n')[0]
-    request, url, version = request_line.split()
+    # Send the request to the web server
+    web_server_socket.sendall(request)
+
+    # Receive the response from the web server
+    
+    response = b''
+    response = web_server_socket.recv(size)
+    print(response)
+
+    # Split headers and body
+    # headers, body = response.split(b'\r\n\r\n', 1)
+
+    # # Content-Length
+    # if b'Content-Length' in headers:
+    #     content_length = int(headers.split(b'Content-Length: ')[1].split(b'\r\n')[0])
+        
+    #     # Receive the rest of the response body
+    #     while len(body) < content_length:
+    #         data = web_server_socket.recv(size)
+    #         response += data
+
+    # # Chunked
+    # elif b'Transfer-Encoding: chunked' in headers:
+    #     # Receive chunks until the last chunk is received
+    #     while not body.endswith(b'0\r\n\r\n'):
+    #         data = web_server_socket.recv(size)
+    #         response += data
+
+    client.send(response)
+
+    # Close the connection to the web server
+    web_server_socket.close()
+    client.close()
+
+def handle_http_request(client, client_addr, request):
+    message = request.decode('ISO-8859-1') 
+    if len(message.split()) > 1:
+        request_line = message.split('\r\n')[0]
+        method, url, version = request_line.split()
+    else:
+        client.close()
+        return
 
     # Check if HTTP request is supported
-    if request not in ['GET', 'POST', 'HEAD']:
-        send_image_response(client, 'Artboard 1.jpg')
+    if method not in ['GET', 'POST', 'HEAD']:
+        send_image_response(client, 'HTTPRequestError.jpg')
         # HTTP request not supported
         client.close()
         print("Not support HTTP request")
@@ -51,16 +97,18 @@ def handle_http_request(client, message):
 
     # Extract hostname from URL
     hostname = url.split('/')[2]
-    print(f"HTTP Request: {request}")
+    print(f"HTTP Request: {method}")
     print(f"URL: {url}")
     print(f"Host: {hostname}\n")
     
     # Whitelist
     if not check_whitelist(url, whitelist):
-        send_image_response(client, 'Artboard 1.jpg')
+        send_image_response(client, 'WhitelistError.jpg')
         client.close()
         print("Not whitelist")
         return
+    
+    get_response_from_web(client, client_addr, hostname, request)
 
 def main():
     # Tạo proxy server và client socket
@@ -78,10 +126,9 @@ def main():
         client, client_addr = proxy_server.accept()
         print('Received a connection from:', client_addr)
         request = client.recv(size)
-        message = request.decode('ISO-8859-1') 
 
         # Handle request
-        handle_http_request(client, message)
+        handle_http_request(client, client_addr, request)
     
     proxy_server.close()
 
