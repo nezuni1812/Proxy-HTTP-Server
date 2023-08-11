@@ -6,7 +6,7 @@ if len(sys.argv) < 2:
     print('Usage : "python Server.py [Adress of Server]')
     sys.exit(0)
 
-size = 131072
+size = 65536
 server_ip = sys.argv[1]
 server_port = 8888
 
@@ -36,13 +36,13 @@ def send_image_response(client, image_path):
         response += b'Content-Length: ' + str(len(data)).encode() + b'\r\n'
         response += b'\r\n'
         response += data
-        client.sendall(response)
+        client.send(response)
         
 def get_response_from_web(client, client_addr, hostname, request):
     # Create a new socket to connect to the web server
     web_server_socket = socket(AF_INET, SOCK_STREAM)
     web_server_ip = gethostbyname(hostname)
-    web_server_socket.connect((web_server_ip, 80))
+    web_server_socket.connect((web_server_ip, 80)) #80 là port của HTTP
 
     # Send the request to the web server
     web_server_socket.sendall(request)
