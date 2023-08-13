@@ -29,18 +29,20 @@ def check_whitelist(input_website, whitelist):
     return False
 
 def send_image_response(client, image_path):
+    #b'''HTTP/1.1 403 Forbidden\r\nContent-Type: image/jpeg\r\n\r\n'''
+    #full_response = http_response + image_data
     with open(image_path, 'rb') as f:
         data = f.read()
         response = b'HTTP/1.1 403 Forbidden\r\n'
-        response += b'Content-Type: image/jpeg\r\n'
-        response += b'Content-Length: ' + str(len(data)).encode() + b'\r\n'
-        response += b'\r\n'
+        response += b'Content-Type: image/jpeg\r\n\r\n'
         response += data
-        client.send(response)
+        client.sendall(response) 
+        client.close()
         
 def get_response_from_web(client, client_addr, hostname, request):
+    print(request)
     # Create a new socket to connect to the web server
-    web_server_socket = socket(AF_INET, SOCK_STREAM)
+    web_server_socket = socket(AF_INET, SOCK_STREAM) #NHỚ ĐỔI TÊN BIẾN
     web_server_ip = gethostbyname(hostname)
     web_server_socket.connect((web_server_ip, 80)) #80 là port của HTTP
 
@@ -50,27 +52,9 @@ def get_response_from_web(client, client_addr, hostname, request):
     # Receive the response from the web server
     
     response = b''
-    response = web_server_socket.recv(size)
+    response += web_server_socket.recv(size)
     print(response)
-
-    # Split headers and body
-    # headers, body = response.split(b'\r\n\r\n', 1)
-
-    # # Content-Length
-    # if b'Content-Length' in headers:
-    #     content_length = int(headers.split(b'Content-Length: ')[1].split(b'\r\n')[0])
-        
-    #     # Receive the rest of the response body
-    #     while len(body) < content_length:
-    #         data = web_server_socket.recv(size)
-    #         response += data
-
-    # # Chunked
-    # elif b'Transfer-Encoding: chunked' in headers:
-    #     # Receive chunks until the last chunk is received
-    #     while not body.endswith(b'0\r\n\r\n'):
-    #         data = web_server_socket.recv(size)
-    #         response += data
+    print('\n')
 
     client.send(response)
 
@@ -78,7 +62,8 @@ def get_response_from_web(client, client_addr, hostname, request):
     web_server_socket.close()
     client.close()
 
-def handle_http_request(client, client_addr, request):
+def handle_http_request(client, client_addr):
+    request = client.recv(size)
     message = request.decode('ISO-8859-1') 
     if len(message.split()) > 1:
         request_line = message.split('\r\n')[0]
@@ -91,7 +76,6 @@ def handle_http_request(client, client_addr, request):
     if method not in ['GET', 'POST', 'HEAD']:
         send_image_response(client, 'HTTPRequestError.jpg')
         # HTTP request not supported
-        client.close()
         print("Not support HTTP request")
         return
 
@@ -99,25 +83,24 @@ def handle_http_request(client, client_addr, request):
     hostname = url.split('/')[2]
     print(f"HTTP Request: {method}")
     print(f"URL: {url}")
-    print(f"Host: {hostname}\n")
+    print(f"Host: {hostname}")
     
     # Whitelist
-    if not check_whitelist(url, whitelist):
+    if not check_whitelist(hostname, whitelist):
         send_image_response(client, 'WhitelistError.jpg')
-        client.close()
         print("Not whitelist")
         return
     
     get_response_from_web(client, client_addr, hostname, request)
 
-def main():
+def run():
     # Tạo proxy server và client socket
     proxy_server = socket(AF_INET, SOCK_STREAM)
     
-    # Reuse a local address that is still in the TIME_WAIT state
     proxy_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     proxy_server.bind((server_ip, server_port))
-    proxy_server.listen(5)
+    proxy_server.listen(5) 	#Cho socket đang lắng nghe tới tối đa 5 kết nối
+    print(f"Proxy Server listen to {server_ip}:{server_port}")
 
     # Nhận HTTP request từ client liên tục
     while True:
@@ -125,12 +108,16 @@ def main():
         #đối tượng kết nối để giao tiếp với client và địa chỉ của client (client_addr).
         client, client_addr = proxy_server.accept()
         print('Received a connection from:', client_addr)
-        request = client.recv(size)
-
         # Handle request
-        handle_http_request(client, client_addr, request)
-    
+        
+        thread = Thread(target=handle_http_request, args=(client, client_addr))
+        thread.daemon = True
+        thread.start()
+
     proxy_server.close()
+
+def main():
+    run()
 
 if __name__ == '__main__':
     main()
