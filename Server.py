@@ -116,8 +116,6 @@ def handle_http_request(client, client_addr):
             client.sendall(cached_response)
             return
     
-    # Determine if the request is for an image format
-    
     get_response_from_web(client, client_addr, hostname, request, url, is_image_request)
 
 def run():
