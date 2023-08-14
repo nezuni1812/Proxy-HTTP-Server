@@ -1,6 +1,7 @@
 from socket import *
 import sys
 from threading import Thread
+import time
 
 if len(sys.argv) < 2:
     print('Usage : "python Server.py [Adress of Server]')
@@ -21,6 +22,16 @@ def readFile(file_path):
     return whitelist
 
 whitelist = readFile("config.txt")
+cache_time = 20
+image_cache = {}
+
+def cache_manager(cache_start):
+    while True:
+        cache_end = time.time()
+        if cache_end - cache_start - cache_time > 0:
+            image_cache.clear()
+            cache_start = cache_end  # Update lại thời gian bắt đầu
+            print('Your Image Caching has been reset')
 
 def check_whitelist(input_website, whitelist):
     for website in whitelist:
@@ -39,27 +50,32 @@ def send_image_response(client, image_path):
         client.sendall(response) 
         client.close()
         
-def get_response_from_web(client, client_addr, hostname, request):
+def get_response_from_web(client, client_addr, hostname, request, url, isImage):
     print(request)
-    # Create a new socket to connect to the web server
-    web_server_socket = socket(AF_INET, SOCK_STREAM) #NHỚ ĐỔI TÊN BIẾN
-    web_server_ip = gethostbyname(hostname)
-    web_server_socket.connect((web_server_ip, 80)) #80 là port của HTTP
+
+    # Socket từ Proxy tới Server
+    web_server = socket(AF_INET, SOCK_STREAM)
+    web_ip = gethostbyname(hostname)
+    web_server.connect((web_ip, 80)) #80 là port của HTTP
 
     # Send the request to the web server
-    web_server_socket.sendall(request)
+    web_server.sendall(request)
 
-    # Receive the response from the web server
-    
+    # Content Length + Chunked
     response = b''
-    response += web_server_socket.recv(size)
-    print(response)
-    print('\n')
+    response += web_server.recv(size)
+    
+    #Cache
+    if isImage:
+        image_cache[url] = response   
+        for url2, response2 in image_cache.items():
+            print(f"URL: {url2}, Response: {response2}")
+            print('\n')
+    # print(response)
 
-    client.send(response)
+    client.sendall(response)
 
-    # Close the connection to the web server
-    web_server_socket.close()
+    web_server.close()
     client.close()
 
 def handle_http_request(client, client_addr):
@@ -76,7 +92,7 @@ def handle_http_request(client, client_addr):
     if method not in ['GET', 'POST', 'HEAD']:
         send_image_response(client, 'HTTPRequestError.jpg')
         # HTTP request not supported
-        print("Not support HTTP request")
+        print("Not support HTTP request\n")
         return
 
     # Extract hostname from URL
@@ -88,10 +104,21 @@ def handle_http_request(client, client_addr):
     # Whitelist
     if not check_whitelist(hostname, whitelist):
         send_image_response(client, 'WhitelistError.jpg')
-        print("Not whitelist")
+        print("Not whitelist\n")
         return
     
-    get_response_from_web(client, client_addr, hostname, request)
+    is_image_request = False
+    if b'.ico' in request: #Bổ sung định dạng khác sau
+        is_image_request = True
+        cached_response = image_cache.get(url)
+        if cached_response:
+            print(f'Image of {url} already been cached!\n')
+            client.sendall(cached_response)
+            return
+    
+    # Determine if the request is for an image format
+    
+    get_response_from_web(client, client_addr, hostname, request, url, is_image_request)
 
 def run():
     # Tạo proxy server và client socket
@@ -101,15 +128,21 @@ def run():
     proxy_server.bind((server_ip, server_port))
     proxy_server.listen(5) 	#Cho socket đang lắng nghe tới tối đa 5 kết nối
     print(f"Proxy Server listen to {server_ip}:{server_port}")
+    
+    cache_start = time.time()
+    cache_thread = Thread(target=cache_manager, args=(cache_start,))
+    cache_thread.daemon = True
+    cache_thread.start()
 
     # Nhận HTTP request từ client liên tục
     while True:
         #chấp nhận một kết nối đến từ client và trả về một 
         #đối tượng kết nối để giao tiếp với client và địa chỉ của client (client_addr).
         client, client_addr = proxy_server.accept()
+            
         print('Received a connection from:', client_addr)
-        # Handle request
         
+        # Handle request
         thread = Thread(target=handle_http_request, args=(client, client_addr))
         thread.daemon = True
         thread.start()
