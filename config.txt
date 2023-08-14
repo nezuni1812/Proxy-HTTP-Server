@@ -1,3 +1,8 @@
-cache_time = 900 # seconds
-whitelisting=testphp.vulnweb.com, vbsca.ca, findfrog.com, oosc.online, example.com, 
-time=8-20
+oosc.online
+testphp.vulnweb.com
+vbsca.ca/login
+gamevn.com
+example.com
+CACHE 120
+TIME_START 0
+TIME END 23 
