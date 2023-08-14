@@ -11,24 +11,34 @@ size = 65536
 server_ip = sys.argv[1]
 server_port = 8888
 
-def readFile(file_path):
-    whitelist = [] # emty list to store whitelisted websites
-    # https://www.freecodecamp.org/news/with-open-in-python-with-statement-syntax-example/
-    with open(file_path, 'r') as f:
+def read_config_file(filename):
+    whitelist = []
+    cache_duration = None
+    time_start = None
+    time_end = None
+    with open(filename, 'r') as f:
         for line in f:
             line = line.strip()
-            if line.startswith("whitelisting="):
-                whitelist = line[len("whitelisting="):].split(', ')  # tach chuoi
-    return whitelist
+            if line.startswith('CACHE'):
+                cache_duration = int(line.split()[1])
+            elif line.startswith('TIME_START'):
+                time_start = int(line.split()[1])
+            elif line.startswith('TIME_END'):
+                time_end = int(line.split()[1])
+            else:
+                whitelist.append(line)
+    print(time_start)
+    print(time_end)
+    print(cache_duration)
+    return whitelist, cache_duration, time_start, time_end
 
-whitelist = readFile("config.txt")
-cache_time = 20
+whitelist, cache_duration, time_start, time_end = read_config_file("config.txt")
+
 image_cache = {}
-
 def cache_manager(cache_start):
     while True:
         cache_end = time.time()
-        if cache_end - cache_start - cache_time > 0:
+        if cache_end - cache_start - cache_duration > 0:
             image_cache.clear()
             cache_start = cache_end  # Update lại thời gian bắt đầu
             print('Your Image Caching has been reset')
