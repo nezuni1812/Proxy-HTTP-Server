@@ -5,4 +5,4 @@ gamevn.com
 example.com
 CACHE 120
 TIME_START 0
-TIME END 23 
+TIME_END 23 
