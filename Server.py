@@ -4,7 +4,7 @@ from threading import Thread
 import time
 
 if len(sys.argv) < 2:
-    print('Usage : "python Server.py [Adress of Server]')
+    print('Usage : "python Server.py [Address of Server]')
     sys.exit(0)
 
 size = 65536
