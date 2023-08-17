@@ -6,4 +6,4 @@ info.cern.ch
 example.com
 CACHE 120
 TIME_START 8
-TIME_END 20
+TIME_END 1
