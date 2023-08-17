@@ -1,7 +1,9 @@
 from socket import *
 import sys
 from threading import Thread
+import datetime
 import time
+
 
 if len(sys.argv) < 2:
     print('Usage : "python Server.py [Address of Server]')
@@ -49,6 +51,22 @@ def check_whitelist(input_website, whitelist):
             return True
     return False
 
+def is_within_time_range(start_time, end_time):
+
+    # https://favtutor.com/blogs/get-current-time-python#:~:text=Python%20includes%20a%20datetime.,DD%20HH%3AMM%3ASS.
+    
+    current_time = datetime.datetime.now()
+    now = current_time.strftime('%H')
+    now = int(now) # Ép kiểu
+
+    if start_time <= now and now < end_time:
+       return True
+    
+    return False
+
+
+
+
 def send_image_response(client, image_path):
     #b'''HTTP/1.1 403 Forbidden\r\nContent-Type: image/jpeg\r\n\r\n'''
     #full_response = http_response + image_data
@@ -61,8 +79,6 @@ def send_image_response(client, image_path):
         client.close()
         
 def get_response_from_web(client, client_addr, hostname, request, url, isImage):
-    print(request)
-
     # Socket từ Proxy tới Server
     web_server = socket(AF_INET, SOCK_STREAM)
     web_ip = gethostbyname(hostname)
@@ -74,8 +90,10 @@ def get_response_from_web(client, client_addr, hostname, request, url, isImage):
     # Content Length + Chunked
     response = b''
     response += web_server.recv(size)
+    print(response)
     
-    #Cache
+    
+    # Cache
     if isImage:
         image_cache[url] = response   
         for url2, response2 in image_cache.items():
@@ -98,6 +116,13 @@ def handle_http_request(client, client_addr):
         client.close()
         return
 
+
+    # time range
+    if not is_within_time_range(time_start, time_end):
+        send_image_response(client, 'TimeAccessError.jpg')
+        print("Access denied\n")
+        return
+
     # Check if HTTP request is supported
     if method not in ['GET', 'POST', 'HEAD']:
         send_image_response(client, 'HTTPRequestError.jpg')
@@ -118,7 +143,7 @@ def handle_http_request(client, client_addr):
         return
     
     is_image_request = False
-    if b'.ico' in request: #Bổ sung định dạng khác sau
+    if b'.ico' in request: # Bổ sung định dạng khác sau
         is_image_request = True
         cached_response = image_cache.get(url)
         if cached_response:
@@ -134,7 +159,7 @@ def run():
     
     proxy_server.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     proxy_server.bind((server_ip, server_port))
-    proxy_server.listen(5) 	#Cho socket đang lắng nghe tới tối đa 5 kết nối
+    proxy_server.listen(5) 	# Cho socket đang lắng nghe tới tối đa 5 kết nối
     print(f"Proxy Server listen to {server_ip}:{server_port}")
     
     cache_start = time.time()

@@ -14,13 +14,12 @@ server_ip = sys.argv[1]
 server_port = 8888
 
 def read_config_file(filename):
-    whitelist = []
+    whitelist = [] # Tạo danh sách trắng 
     cache_duration = None
     time_start = None
     time_end = None
     with open(filename, 'r') as f:
         for line in f:
-            line = line.strip()
             if line.startswith('CACHE'):
                 cache_duration = int(line.split()[1])
             elif line.startswith('TIME_START'):
@@ -29,9 +28,6 @@ def read_config_file(filename):
                 time_end = int(line.split()[1])
             else:
                 whitelist.append(line)
-    print(time_start)
-    print(time_end)
-    print(cache_duration)
     return whitelist, cache_duration, time_start, time_end
 
 whitelist, cache_duration, time_start, time_end = read_config_file("config.txt")
@@ -52,7 +48,6 @@ def check_whitelist(input_website, whitelist):
     return False
 
 def is_within_time_range(start_time, end_time):
-
     # https://favtutor.com/blogs/get-current-time-python#:~:text=Python%20includes%20a%20datetime.,DD%20HH%3AMM%3ASS.
     
     current_time = datetime.datetime.now()
@@ -63,9 +58,6 @@ def is_within_time_range(start_time, end_time):
        return True
     
     return False
-
-
-
 
 def send_image_response(client, image_path):
     #b'''HTTP/1.1 403 Forbidden\r\nContent-Type: image/jpeg\r\n\r\n'''
