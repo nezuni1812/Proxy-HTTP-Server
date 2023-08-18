@@ -50,7 +50,8 @@ def cache_manager():
             time_end = time.time()
             if time_end - time_start > cache_duration:
                 os.remove(file_path)
-                print(f'Your Image Caching of {file_name} has been reset')
+                print(f'Your Image Caching file: {file_name} has been reset')
+            time.sleep(60)
 
 def check_whitelist(input_website, whitelist):
     for website in whitelist:
@@ -167,7 +168,7 @@ def handle_http_request(client, client_addr):
             return
         
         isImage = False
-        if b".ico" in request or b".png" in request or b".jpg" in request: #Bổ sung định dạng khác sau
+        if b".ico" in request or b".png" in request or b".jpeg" in request or b".jpg" in request or b".gif" in request or b".webp" in request or b".svg" in request: #Scalable Vector Graphics
             isImage = True
             if os.path.exists("image_cache/" + fileName):
                 with open("image_cache/" + fileName, 'rb') as file:
