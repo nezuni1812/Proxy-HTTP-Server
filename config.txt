@@ -1,7 +1,6 @@
 oosc.online
 testphp.vulnweb.com
 vbsca.ca
-info.cern.ch
 example.com
 Cache_Time 960
 Time_start 8
