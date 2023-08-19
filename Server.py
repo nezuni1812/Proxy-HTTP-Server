@@ -4,9 +4,9 @@ from threading import Thread
 import datetime
 import time
 
-size = 4096
 server_ip = '127.0.0.1'
 server_port = 8888
+size = 4096
 
 path = "Image_cache/"
 isExist = os.path.exists(path)
@@ -49,7 +49,7 @@ def cache_manager():
             if time_end - time_start > cache_duration:
                 os.remove(file_path)
                 print(f'Your Image Cached file: {file_name} has been reset')
-            time.sleep(15*60)
+        time.sleep(15*60)
 
 # Hàm kiểm tra thời gian hiện tại có nằm trong thời gian hoạt động của Server
 def is_within_time_range(start_time, end_time):
@@ -77,7 +77,7 @@ def check_whitelist(input_website, whitelist):
 
 # Hàm trả về HTTP Response kèm mã 403 Forbidden và nội dung của response (lý do bị 403)
 def send_image_response(client, image_name):
-    #b'''HTTP/1.1 403 Forbidden\r\nContent-Type: image/jpeg\r\n\r\n'''
+    #b'HTTP/1.1 403 Forbidden\r\nContent-Type: image/jpeg\r\n\r\n'
     #full_response = http_response + image_data
     image_path = os.path.join("403Forbidden", image_name)
     with open(image_path, 'rb') as f:
@@ -156,7 +156,7 @@ def handle_http_request(client, client_addr):
         if method not in ['GET', 'POST', 'HEAD']:
             send_image_response(client, 'HTTPRequestError.jpg')
             # HTTP request not supported
-            print("This HTTP Requests are not supported!\n")
+            print("This HTTP Request is not supported!\n")
             return
 
         # Extract hostname from URL
