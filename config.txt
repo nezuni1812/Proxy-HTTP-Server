@@ -1,9 +1,8 @@
 oosc.online
 testphp.vulnweb.com
-vbsca.ca/login
-gamevn.com
+vbsca.ca
 info.cern.ch
 example.com
-CACHE 120
-TIME_START 8
-TIME_END 22
+Cache_Time 960
+Time_start 8
+Time_end 0
